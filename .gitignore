@@ -1,0 +1,65 @@
+# ───────────────────────── Python ─────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg
+*.egg-info/
+build/
+dist/
+.eggs/
+*.manifest
+*.spec
+
+# 测试 / 覆盖率 / 类型缓存
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.pyright/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+.tox/
+.nox/
+
+# uv / 虚拟环境
+.venv/
+venv/
+env/
+.python-version.local
+
+# Jupyter
+.ipynb_checkpoints/
+
+# ───────────────────────── 前端（web/ + Node） ─────────────────────────
+node_modules/
+.npm/
+.pnpm-store/
+.yarn/
+.cache/
+.parcel-cache/
+.vite/
+web/dist/
+web/build/
+*.local
+
+# 日志
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ───────────────────────── 环境变量 / 密钥 ─────────────────────────
+.env
+.env.*
+!.env.example
+
+# ───────────────────────── 编辑器 / 操作系统 ─────────────────────────
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
