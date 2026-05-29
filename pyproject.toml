@@ -27,6 +27,7 @@ api = [
     "websockets>=13.0",
 ]
 dev = [
+    "httpx>=0.28.1",
     "pre-commit>=4.0.0",
     "pycodestyle>=2.12.0",
     "pyright[nodejs]>=1.1.400",
