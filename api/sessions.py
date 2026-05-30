@@ -37,12 +37,15 @@ class Session:
 
     # ---------- 视角 / 合法动作 ----------
 
-    def view(self, seat: int) -> GameView:
+    def view(self, seat: int, reveal_all: bool = False) -> GameView:
         s = self.state
         return GameView(
             game_id=self.game_id,
             seat=seat,
             hand=hand_view(s, seat),
+            all_hands=(
+                [hand_view(s, p) for p in range(NUM_PLAYERS)] if reveal_all else None
+            ),
             hand_counts=s.hand_counts(),
             live_play=combo_view(s.live_play) if s.live_play else None,
             live_player=s.live_player,
@@ -57,7 +60,12 @@ class Session:
             bombs_played=len(s.bombs_played),
             match_finished=self.match_finished,
             match_winner=self.match_winner,
-            your_turn=(s.turn == seat and not s.finished and not self.match_finished),
+            your_turn=(
+                s.turn == seat
+                and not s.finished
+                and not self.match_finished
+                and seat not in self.bot_seats
+            ),
             history=history_view(s),
         )
 
@@ -87,6 +95,18 @@ class Session:
         events: list[dict] = []
         self._apply(req.seat, action, events)
         self._run_bots(events)
+        return events
+
+    def advance_one(self) -> list[dict]:
+        """推进一步 bot 动作（play 观战模式逐手播放用）。当前轮非 bot 即报错。"""
+        if self.match_finished:
+            raise ValueError("整场已结束")
+        seat = self.state.turn
+        if seat not in self.bot_seats:
+            raise ValueError(f"座位 {seat} 不是 bot，需人工出牌")
+        action = bots.choose_action(self.state, seat)
+        events: list[dict] = []
+        self._apply(seat, action, events)
         return events
 
     def _build_action(self, req: ActionRequest) -> Action:
@@ -186,9 +206,11 @@ class SessionManager:
             state=state,
         )
         self._sessions[game_id] = session
-        # 若首家是 bot，先把 bot 跑到轮到人类。
-        events: list[dict] = []
-        session._run_bots(events)
+        # 有人类座位时先把 bot 跑到轮到人类；全 bot（观战）模式留给前端逐手推进，
+        # 否则 _run_bots 会一口气把整场跑完。
+        if set(range(NUM_PLAYERS)) - session.bot_seats:
+            events: list[dict] = []
+            session._run_bots(events)
         return session
 
     def get(self, game_id: str) -> Session:

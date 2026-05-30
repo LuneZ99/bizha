@@ -6,8 +6,11 @@
 
 from __future__ import annotations
 
-from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
+from pathlib import Path
+
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from api.schemas import (
     ActionRequest,
@@ -16,7 +19,10 @@ from api.schemas import (
     LegalActionsResponse,
 )
 from api.sessions import SessionManager
+from engine.match import NUM_PLAYERS
 
+
+WEB_DIR = Path(__file__).resolve().parent.parent / "web"
 
 app = FastAPI(title="bizha", description="3 人特殊扑克牌游戏后端")
 manager = SessionManager()
@@ -33,23 +39,19 @@ async def _value_error(_req, exc: ValueError) -> JSONResponse:
     return JSONResponse(status_code=400, content={"detail": str(exc)})
 
 
-def _default_human_seat(bot_seats: set[int]) -> int:
-    for seat in range(3):
-        if seat not in bot_seats:
-            return seat
-    raise HTTPException(status_code=400, detail="至少要留一个人类座位")
-
-
 @app.post("/games", response_model=GameView)
 def create_game(req: CreateGameRequest) -> GameView:
+    """建一整场。bot_seats 占满 3 座 = play 观战模式（亮全手牌）；否则 human 模式。"""
     session = manager.create(req.seed, req.bot_seats)
-    human_seat = _default_human_seat(session.bot_seats)
-    return session.view(human_seat)
+    human_seats = sorted(set(range(NUM_PLAYERS)) - session.bot_seats)
+    if not human_seats:
+        return session.view(0, reveal_all=True)
+    return session.view(human_seats[0])
 
 
 @app.get("/games/{game_id}", response_model=GameView)
-def get_game(game_id: str, seat: int) -> GameView:
-    return manager.get(game_id).view(seat)
+def get_game(game_id: str, seat: int, reveal: bool = False) -> GameView:
+    return manager.get(game_id).view(seat, reveal_all=reveal)
 
 
 @app.get("/games/{game_id}/legal", response_model=LegalActionsResponse)
@@ -63,6 +65,15 @@ async def submit_action(game_id: str, req: ActionRequest) -> GameView:
     events = session.submit(req)
     await _broadcast(game_id, events)
     return session.view(req.seat)
+
+
+@app.post("/games/{game_id}/advance", response_model=GameView)
+async def advance_game(game_id: str, seat: int = 0, reveal: bool = False) -> GameView:
+    """play 观战模式逐手推进：跑一步 bot 动作，回当前视角。"""
+    session = manager.get(game_id)
+    events = session.advance_one()
+    await _broadcast(game_id, events)
+    return session.view(seat, reveal_all=reveal)
 
 
 async def _broadcast(game_id: str, events: list[dict]) -> None:
@@ -90,3 +101,7 @@ async def game_ws(websocket: WebSocket, game_id: str, seat: int) -> None:
             await websocket.receive_text()  # 保持连接；本阶段动作走 REST
     except WebSocketDisconnect:
         _ws_clients.get(game_id, set()).discard(websocket)
+
+
+# 前端静态资源同源托管（须放在所有 API 路由之后，"/" 挂载会兜底其余路径）。
+app.mount("/", StaticFiles(directory=WEB_DIR, html=True), name="web")

@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>bizha · 3 人扑克</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <!-- 开始页：选模式 -->
+  <div id="start">
+    <h1>bizha · 3 人特殊扑克</h1>
+    <div class="modes">
+      <div class="mode-card" data-mode="human">
+        <h2>人机对战</h2>
+        <p>你坐 0 号位，对阵 2 个 bot。<br />选牌出牌 / 过牌，先到 30 分赢整场。</p>
+      </div>
+      <div class="mode-card" data-mode="play">
+        <h2>观战（3 bot）</h2>
+        <p>3 个 bot 自动对局，逐手 / 自动播放。<br />全程亮三家手牌，看 AI 怎么打。</p>
+      </div>
+    </div>
+    <div class="seed-row">
+      <label for="seed-input">随机种子（可留空）：</label>
+      <input id="seed-input" type="number" placeholder="留空则随机" />
+    </div>
+    <div id="start-error" class="status warn"></div>
+  </div>
+
+  <!-- 记分板 -->
+  <div id="scoreboard" class="hidden">
+    <span class="title">bizha</span>
+    <div class="score-chip" data-seat="0"><span class="who"></span><span class="val"></span></div>
+    <div class="score-chip" data-seat="1"><span class="who"></span><span class="val"></span></div>
+    <div class="score-chip" data-seat="2"><span class="who"></span><span class="val"></span></div>
+    <div class="meta" id="meta"></div>
+    <button id="new-game-btn">换一局</button>
+  </div>
+
+  <!-- 牌桌 -->
+  <div id="table" class="hidden">
+    <div class="opponents">
+      <div class="seat" id="seat-left">
+        <div class="seat-head"><span class="name"></span><span class="count-badge"></span></div>
+        <div class="hand-row fan"></div>
+      </div>
+      <div class="seat" id="seat-right">
+        <div class="seat-head"><span class="name"></span><span class="count-badge"></span></div>
+        <div class="hand-row fan"></div>
+      </div>
+    </div>
+
+    <div id="center">
+      <div id="live-label"></div>
+      <div id="live-cards"></div>
+    </div>
+
+    <div id="bottom-area">
+      <div class="seat" id="seat-bottom">
+        <div class="seat-head"><span class="name"></span><span class="count-badge"></span></div>
+        <div class="hand-row fan selectable"></div>
+      </div>
+
+      <!-- human 模式控制 -->
+      <div id="controls" class="hidden">
+        <button class="action" id="play-btn">出牌</button>
+        <button class="action" id="pass-btn">过牌</button>
+        <button class="action" id="clear-btn">清空选择</button>
+        <span class="status" id="human-status"></span>
+      </div>
+
+      <!-- play 观战控制 -->
+      <div id="play-controls" class="hidden">
+        <button class="action" id="auto-btn">自动播放</button>
+        <button class="action" id="step-btn">单步</button>
+        <label style="font-size:13px;">每步间隔
+          <input type="range" id="speed-range" min="150" max="1600" step="50" value="800" />
+        </label>
+        <span class="status" id="play-status"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 日志 -->
+  <div id="log" class="hidden">
+    <h3>本局出牌记录</h3>
+    <div id="log-list"></div>
+  </div>
+
+  <!-- 含王歧义选择器 -->
+  <div id="chooser" class="overlay hidden">
+    <div class="modal">
+      <h2>这手牌怎么算？</h2>
+      <p style="font-size:13px;color:#b9c2cc;">含王，有多种合法解读，请选一种：</p>
+      <div class="choice-list" id="chooser-list"></div>
+    </div>
+  </div>
+
+  <!-- 整场结束 -->
+  <div id="match-over" class="overlay hidden">
+    <div class="modal">
+      <h2>整场结束</h2>
+      <div class="big" id="match-result"></div>
+      <div id="match-scores" style="color:#b9c2cc;"></div>
+      <button class="primary" id="again-btn">再来一场</button>
+    </div>
+  </div>
+
+  <script src="cards.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

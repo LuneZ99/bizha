@@ -40,6 +40,7 @@ class GameView(BaseModel):
     game_id: str
     seat: int
     hand: list[CardView]  # 仅己方手牌
+    all_hands: list[list[CardView]] | None = None  # 观战（全 bot）模式才亮三家手牌
     hand_counts: list[int]  # 三家剩余张数（绝对座位）
     live_play: ComboView | None
     live_player: int | None
